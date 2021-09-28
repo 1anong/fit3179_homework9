@@ -1,0 +1,101 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "background": "white",
+  "padding": 5,
+  "width": 800,
+  "height": 600,
+  "title": {"text": "Population of Georgia's municipalities", "frame": "group"},
+  "data": [
+    {
+      "name": "source_1",
+      "url": "https://raw.githubusercontent.com/1anong/fit3179_homework9/main/geo_admpop.csv",
+      "format": {"type": "csv", "delimiter": ","}
+    },
+    {
+      "name": "source_0",
+      "url": "https://raw.githubusercontent.com/1anong/fit3179_homework9/main/SubRegions_low_quality_topo.json",
+      "format": {
+        "type": "topojson",
+        "feature": "georgian_subregions",
+        "parse": {}
+      },
+      "transform": [
+        {
+          "type": "formula",
+          "expr": "datum[\"properties\"] && datum[\"properties\"][\"NAME_2\"]",
+          "as": "properties.NAME_2"
+        },
+        {
+          "type": "lookup",
+          "from": "source_1",
+          "key": "ADM2_EN",
+          "fields": ["properties.NAME_2"],
+          "values": ["POP_FINAL", "ADM1_EN"]
+        },
+        {
+          "type": "filter",
+          "expr": "isValid(datum[\"POP_FINAL\"]) && isFinite(+datum[\"POP_FINAL\"])"
+        }
+      ]
+    }
+  ],
+  "projections": [
+    {
+      "name": "projection",
+      "size": {"signal": "[width, height]"},
+      "fit": {"signal": "data('source_0')"},
+      "type": "conicEqualArea"
+    }
+  ],
+  "marks": [
+    {
+      "name": "marks",
+      "type": "shape",
+      "style": ["geoshape"],
+      "from": {"data": "source_0"},
+      "encode": {
+        "update": {
+          "stroke": {"value": "#eeeeee"},
+          "fill": {"scale": "color", "field": "POP_FINAL"},
+          "tooltip": {
+            "signal": "{\"Municipality\": isValid(datum[\"properties.NAME_2\"]) ? datum[\"properties.NAME_2\"] : \"\"+datum[\"properties.NAME_2\"], \"Admin. Region\": isValid(datum[\"ADM1_EN\"]) ? datum[\"ADM1_EN\"] : \"\"+datum[\"ADM1_EN\"], \"Population\": format(datum[\"POP_FINAL\"], \",\")}"
+          },
+          "ariaRoleDescription": {"value": "geoshape"},
+          "description": {
+            "signal": "\"Population: \" + (format(datum[\"POP_FINAL\"], \"\")) + \"; Municipality: \" + (isValid(datum[\"properties.NAME_2\"]) ? datum[\"properties.NAME_2\"] : \"\"+datum[\"properties.NAME_2\"]) + \"; Admin. Region: \" + (isValid(datum[\"ADM1_EN\"]) ? datum[\"ADM1_EN\"] : \"\"+datum[\"ADM1_EN\"])"
+          }
+        }
+      },
+      "transform": [{"type": "geoshape", "projection": "projection"}]
+    }
+  ],
+  "scales": [
+    {
+      "name": "color",
+      "type": "threshold",
+      "domain": [1, 10000, 20000, 30000, 50000, 100000, 200000, 1000000],
+      "range": [
+        "#82fffa",
+        "#36e4df",
+        "#00c7d5",
+        "#00aac7",
+        "#008db6",
+        "#0071a2",
+        "#00558a",
+        "#003b6f",
+        "#002253"
+      ],
+      "interpolate": "hcl"
+    }
+  ],
+  "legends": [
+    {
+      "title": "Population",
+      "fill": "color",
+      "labelOverlap": "greedy",
+      "symbolType": "circle",
+      "encode": {"symbols": {"update": {"stroke": {"value": "#eeeeee"}}}}
+    }
+  ],
+  "config": {}
+}
